@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPG 密位计算器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f5f5f7;--card:#ffffff;--text:#1d1d1f;--text2:#86868b;
+  --accent:#007aff;--accent2:#ff9500;--green:#34c759;--red:#ff3b30;
+  --shadow:0 1px 3px rgba(0,0,0,.04);
+  --font-mono:'JetBrains Mono',monospace;--font:'Inter',system-ui,sans-serif;
+}
+body.dark{
+  --bg:#0a0e14;--card:#141c28;--text:#e0e6ed;--text2:#6b7d93;
+  --shadow:0 1px 3px rgba(0,0,0,.3);
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;padding:20px}
+.c{max-width:360px;margin:0 auto}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{appearance:none;-webkit-appearance:none;margin:0}
+input[type=number]{appearance:textfield;-moz-appearance:textfield}
+
+.hd{text-align:center;margin-bottom:28px;position:relative}
+.hd h1{font-size:1.1rem;font-weight:600}
+.hd .sub{font-size:.75rem;color:var(--text2);margin-top:4px}
+
+.theme-btn{
+  position:absolute;right:0;top:0;
+  background:var(--card);border:none;border-radius:10px;
+  width:36px;height:36px;cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;box-shadow:var(--shadow);
+}
+.theme-btn:hover{transform:scale(1.1)}
+
+.card{background:var(--card);border-radius:16px;padding:20px;margin-bottom:12px;box-shadow:var(--shadow)}
+.label{font-size:.7rem;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;display:flex;align-items:center}
+
+.input-top{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:center}
+.iw input{
+  width:100%;background:var(--bg);border:none;border-radius:12px;
+  padding:14px 10px;font-family:var(--font-mono);font-size:1.3rem;font-weight:700;
+  color:var(--text);outline:none;text-align:center;
+}
+.iw input:focus{box-shadow:0 0 0 2px var(--accent)}
+.iw input::placeholder{color:var(--text2);opacity:.5;font-weight:400}
+
+.sign-group{display:flex;flex-direction:column;gap:6px}
+.sign-btn{
+  width:36px;height:32px;border:none;border-radius:8px;font-family:var(--font-mono);
+  font-size:1rem;font-weight:700;cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;justify-content:center;
+}
+.sign-btn.plus{background:var(--bg);color:var(--green)}
+.sign-btn.plus.on{background:var(--green);color:#fff}
+.sign-btn.minus{background:var(--bg);color:var(--red)}
+.sign-btn.minus.on{background:var(--red);color:#fff}
+.sign-btn:hover{opacity:.85}
+.sign-btn:active{transform:scale(.95)}
+
+.input-bottom{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;margin-top:8px}
+.unit-label{font-family:var(--font-mono);font-size:.65rem;color:var(--text2);text-align:center;font-weight:600}
+
+.result{text-align:center;padding:8px 0}
+.result .label{margin-bottom:4px;justify-content:center}
+.result .val{font-family:var(--font-mono);font-size:1.5rem;font-weight:700;color:var(--accent);line-height:1.2;display:flex;align-items:baseline;justify-content:center;gap:4px}
+.result .val input{
+  width:80px;background:transparent;border:none;border-bottom:2px dashed var(--text2);
+  font-family:var(--font-mono);font-size:1.5rem;font-weight:700;color:var(--accent);
+  text-align:center;outline:none;padding:0 2px;
+}
+.result .val input:focus{border-bottom-color:var(--accent)}
+.result .val input::placeholder{color:var(--text2);opacity:.5;font-weight:400}
+.result .val .u{font-size:.7rem;color:var(--text2);margin-left:1px}
+.result .val .sep{font-size:.8rem;color:var(--text2);font-weight:400}
+.result .val .tag{font-size:.55rem;color:var(--text2);font-weight:500}
+.result .note{font-size:.65rem;color:var(--text2);margin-top:8px;line-height:1.5;height:2.8em;overflow:hidden;text-align:left;display:inline-block}
+
+.offset-row{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  margin-top:8px;font-size:.65rem;color:var(--text2);
+}
+.offset-row input{
+  width:48px;background:var(--bg);border:none;border-radius:6px;
+  padding:4px 6px;font-family:var(--font-mono);font-size:.7rem;font-weight:600;
+  color:var(--text);text-align:center;outline:none;
+}
+.offset-row input:focus{box-shadow:0 0 0 1.5px var(--accent)}
+
+.qg{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.qb{
+  background:var(--bg);border:none;border-radius:10px;padding:10px 4px;
+  font-family:var(--font-mono);font-size:.75rem;font-weight:600;
+  color:var(--text);cursor:pointer;transition:all .15s;text-align:center;
+}
+.qb:hover{background:var(--accent);color:#fff}
+.qb:active{transform:scale(.95)}
+
+.hist-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.hb{
+  background:var(--bg);border:none;border-radius:8px;padding:8px 6px;
+  font-family:var(--font-mono);font-size:.65rem;font-weight:600;
+  color:var(--accent2);cursor:pointer;transition:all .15s;text-align:center;line-height:1.4;
+}
+.hb:hover{background:var(--accent2);color:#fff}
+.hb .mil{color:var(--text2);font-weight:400;display:block;font-size:.6rem}
+.hb:hover .mil{color:rgba(255,255,255,.7)}
+
+.more-btn{
+  background:none;border:1px dashed var(--text2);border-radius:8px;
+  padding:7px;font-family:var(--font-mono);font-size:.65rem;
+  color:var(--text2);cursor:pointer;transition:all .15s;width:100%;margin-top:8px;grid-column:1/-1;
+}
+.more-btn:hover{border-color:var(--accent);color:var(--accent)}
+.hist-empty{font-size:.7rem;color:var(--text2);font-style:italic;text-align:center;padding:8px 0}
+
+.clear-btn{
+  background:none;border:none;font-size:.6rem;color:var(--text2);
+  cursor:pointer;margin-left:auto;padding:2px 6px;border-radius:4px;
+}
+.clear-btn:hover{color:var(--red)}
+</style>
+</head>
+<body>
+
+<div class="c">
+  <div class="hd">
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">☀️</button>
+    <h1>SPG 密位计算器</h1>
+    <div class="sub">Hell Let Loose · 70~600M</div>
+  </div>
+
+  <div class="card">
+    <div class="input-top">
+      <div class="iw"><input type="number" id="dist" placeholder="距离" value="200"></div>
+      <div class="iw"><input type="number" id="tilt" placeholder="夹角" value="0"></div>
+      <div class="sign-group">
+        <button class="sign-btn plus" id="btnPlus" onclick="setSign('+')">+</button>
+        <button class="sign-btn minus" id="btnMinus" onclick="setSign('-')">−</button>
+      </div>
+    </div>
+    <div class="input-bottom">
+      <div class="unit-label">M</div>
+      <div class="unit-label">MIL</div>
+      <div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="result" style="text-align:center">
+      <div style="text-align:center;margin-bottom:4px">
+        <div class="label" style="margin-bottom:2px;justify-content:center">最终密位</div>
+        <div style="font-size:.55rem;color:var(--text2);font-weight:400">267为临界值，大于267请在高弹道输入</div>
+      </div>
+      <div class="val" id="val">
+        <input type="number" id="milLow" placeholder="低弹道">
+        <span class="u">MIL</span>
+        <span class="tag">低弹道</span>
+        <span class="sep">/</span>
+        <input type="number" id="milHigh" placeholder="高弹道">
+        <span class="u">MIL</span>
+        <span class="tag">高弹道</span>
+      </div>
+      <div class="offset-row">
+        <span>偏移</span>
+        <input type="number" id="offsetVal" value="10">
+        <span>M</span>
+      </div>
+      <div class="note" id="note">请输入距离和夹角</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">常用距离</div>
+    <div class="qg" id="qg"></div>
+  </div>
+
+  <div class="card">
+    <div class="label">
+      <span>历史距离</span>
+      <button class="clear-btn" onclick="clearHist()">清空</button>
+    </div>
+    <div id="histArea"><div class="hist-empty">暂无记录</div></div>
+  </div>
+</div>
+
+<script>
+var lowData=[
+  {m:0,d:70},{m:50,d:170},{m:85,d:245},{m:100,d:270},
+  {m:150,d:375},{m:200,d:475},{m:250,d:555},{m:267,d:600}
+];
+
+var highData=[
+  {m:533,d:200},{m:516,d:227},{m:498,d:253},{m:480,d:280},
+  {m:462,d:307},{m:444,d:333},{m:427,d:360},{m:409,d:387},
+  {m:391,d:413},{m:373,d:440},{m:356,d:467},{m:338,d:493},
+  {m:320,d:520},{m:302,d:547},{m:284,d:573},{m:267,d:600}
+];
+
+var histList=[];
+var tiltSign=0;
+var isDefault=true;
+var darkMode=false;
+var shownCount=6;
+var skipUpdate=false;
+var lastEdited=null;
+
+function interpMil(table,dist){
+  var s=table.slice().sort(function(a,b){return a.d-b.d});
+  for(var i=0;i<s.length-1;i++){
+    if(dist>=s[i].d&&dist<=s[i+1].d){
+      var r=(dist-s[i].d)/(s[i+1].d-s[i].d);
+      return Math.round(s[i].m+r*(s[i+1].m-s[i].m));
+    }
+  }
+  return null;
+}
+
+function interpDist(table,mil){
+  var s=table.slice().sort(function(a,b){return a.m-b.m});
+  for(var i=0;i<s.length-1;i++){
+    if(mil>=s[i].m&&mil<=s[i+1].m){
+      var r=(mil-s[i].m)/(s[i+1].m-s[i].m);
+      return Math.round(s[i].d+r*(s[i+1].d-s[i].d));
+    }
+    if(mil>=s[i+1].m&&mil<=s[i].m){
+      var r2=(mil-s[i+1].m)/(s[i].m-s[i+1].m);
+      return Math.round(s[i+1].d+r2*(s[i].d-s[i+1].d));
+    }
+  }
+  return null;
+}
+
+function toggleTheme(){
+  darkMode=!darkMode;
+  document.body.classList.toggle('dark',darkMode);
+  document.getElementById('themeBtn').textContent=darkMode?'🌙':'☀️';
+}
+
+function selectOnFocus(el){
+  el.addEventListener('focus',function(){setTimeout(function(){el.select()},0)});
+  el.addEventListener('click',function(){setTimeout(function(){el.select()},0)});
+}
+
+function setSign(s){
+  var btnP=document.getElementById('btnPlus');
+  var btnM=document.getElementById('btnMinus');
+  if(s==='+'){
+    if(tiltSign===1){tiltSign=0;btnP.classList.remove('on')}
+    else{tiltSign=1;btnP.classList.add('on');btnM.classList.remove('on')}
+  }else{
+    if(tiltSign===-1){tiltSign=0;btnM.classList.remove('on')}
+    else{tiltSign=-1;btnM.classList.add('on');btnP.classList.remove('on')}
+  }
+  update();
+}
+
+function getTilt(){
+  var raw=parseFloat(document.getElementById('tilt').value);
+  if(isNaN(raw))return 0;
+  return tiltSign===0?raw:Math.abs(raw)*tiltSign;
+}
+
+function getOffset(){
+  var raw=parseFloat(document.getElementById('offsetVal').value);
+  if(isNaN(raw)||raw<0)return 0;
+  return Math.round(raw);
+}
+
+function addHistEntry(dist,lowMil,highMil){
+  histList=histList.filter(function(h){return h.d!==dist});
+  histList.unshift({d:dist,low:lowMil,high:highMil});
+  renderHist();
+}
+
+function clearHist(){histList=[];shownCount=6;renderHist()}
+
+function renderHist(){
+  var area=document.getElementById('histArea');
+  if(histList.length===0){area.innerHTML='<div class="hist-empty">暂无记录</div>';return}
+  var show=histList.slice(0,shownCount);
+  var remaining=histList.length-shownCount;
+  var html='<div class="hist-grid">';
+  for(var i=0;i<show.length;i++){
+    var h=show[i];
+    var label=h.low!==null?h.low:h.high;
+    html+='<button class="hb" onclick="setD('+h.d+')">'+h.d+'<span class="mil">'+label+'MIL</span></button>';
+  }
+  if(remaining>0){html+='<button class="more-btn" onclick="showMore()">展开更多 (+'+remaining+')</button>'}
+  html+='</div>';
+  area.innerHTML=html;
+}
+
+function showMore(){shownCount+=6;renderHist()}
+
+function update(){
+  if(skipUpdate)return;
+  var distInput=document.getElementById('dist');
+  var tiltInput=document.getElementById('tilt');
+  var note=document.getElementById('note');
+  var milLow=document.getElementById('milLow');
+  var milHigh=document.getElementById('milHigh');
+
+  var d=parseFloat(distInput.value);
+  var t=getTilt();
+  var lowVal=milLow.value.trim();
+  var highVal=milHigh.value.trim();
+  var lowNum=parseFloat(lowVal);
+  var highNum=parseFloat(highVal);
+
+  var distSet=!isNaN(d)&&distInput.value!=='';
+  var tiltSet=!isNaN(t)&&tiltInput.value!=='';
+  var lowSet=!isNaN(lowNum)&&lowVal!=='';
+  var highSet=!isNaN(highNum)&&highVal!=='';
+  var milSet=lowSet||highSet;
+
+  var count=(distSet?1:0)+(tiltSet?1:0)+(milSet?1:0);
+
+  if(count<2){
+    note.textContent='请至少输入两个值';
+    return;
+  }
+
+  if(!milSet&&distSet&&tiltSet){
+    calcMilFromDist(d,t);
+  }else if(!distSet&&tiltSet&&milSet){
+    if(lowSet)calcDistFromMil(lowNum,t,'low');
+    else if(highSet)calcDistFromMil(highNum,t,'high');
+  }else if(distSet&&tiltSet&&milSet){
+    if(lastEdited==='dist'||lastEdited==='tilt'){
+      calcMilFromDist(d,t);
+    }else if(lastEdited==='low'&&lowSet){
+      calcDistFromMil(lowNum,t,'low');
+    }else if(lastEdited==='high'&&highSet){
+      calcDistFromMil(highNum,t,'high');
+    }
+  }
+}
+
+function fmtMil(d,tilt){
+  var lowMil=interpMil(lowData,d);
+  var highMil=interpMil(highData,d);
+  var lowFinal=lowMil!==null?lowMil+tilt:null;
+  var highFinal=highMil!==null?highMil+tilt:null;
+  var lowOk=lowFinal!==null&&lowFinal>=-89&&lowFinal<=533;
+  var highOk=highFinal!==null&&highFinal>=-89&&highFinal<=533;
+  var parts=[];
+  if(lowOk)parts.push(lowFinal);
+  if(highOk)parts.push(highFinal);
+  return parts.join(' / ');
+}
+
+function calcMilFromDist(d,tilt){
+  var note=document.getElementById('note');
+  if(d<70||d>600){
+    setMilInputs('','');
+    note.textContent='距离有效范围 70~600M';return;
+  }
+  var lowMil=interpMil(lowData,d);
+  var highMil=interpMil(highData,d);
+  if(lowMil===null&&highMil===null){
+    setMilInputs('','');
+    note.textContent='无法计算';return;
+  }
+  var lowFinal=lowMil!==null?lowMil+tilt:null;
+  var highFinal=highMil!==null?highMil+tilt:null;
+  var lowOk=lowFinal!==null&&lowFinal>=-89&&lowFinal<=533;
+  var highOk=highFinal!==null&&highFinal>=-89&&highFinal<=533;
+
+  setMilInputs(lowOk?lowFinal:'',highOk?highFinal:'');
+
+  var off=getOffset();
+  var lines=[];
+  if(off>0){
+    var farDist=d+off;
+    var nearDist=d-off;
+    if(farDist>=70&&farDist<=600){
+      lines.push('+'+off+'M → '+fmtMil(farDist,tilt));
+    }
+    if(nearDist>=70&&nearDist<=600){
+      lines.push('-'+off+'M → '+fmtMil(nearDist,tilt));
+    }
+  }
+  note.innerHTML=lines.length>0?lines.join('<br>'):d+'M → '+fmtMil(d,tilt);
+
+  if(!isDefault){addHistEntry(d,lowOk?lowFinal:null,highOk?highFinal:null)}
+}
+
+function calcDistFromMil(userMil,tilt,which){
+  var note=document.getElementById('note');
+  var tableMil=userMil-tilt;
+  var table=which==='low'?lowData:highData;
+  var dist=interpDist(table,tableMil);
+  if(dist===null){
+    note.textContent='无法找到对应距离';return;
+  }
+  if(dist<70||dist>600){
+    note.textContent='距离超出范围 70~600M';return;
+  }
+  var lowMil=interpMil(lowData,dist);
+  var highMil=interpMil(highData,dist);
+  var lowFinal=lowMil!==null?lowMil+tilt:null;
+  var highFinal=highMil!==null?highMil+tilt:null;
+  var lowOk=lowFinal!==null&&lowFinal>=-89&&lowFinal<=533;
+  var highOk=highFinal!==null&&highFinal>=-89&&highFinal<=533;
+
+  setMilInputs(lowOk?lowFinal:'',highOk?highFinal:'');
+
+  var off=getOffset();
+  var lines=[];
+  if(off>0){
+    var farDist=dist+off;
+    var nearDist=dist-off;
+    if(farDist>=70&&farDist<=600){
+      lines.push('打远+'+off+'M '+farDist+'M → '+fmtMil(farDist,tilt));
+    }
+    if(nearDist>=70&&nearDist<=600){
+      lines.push('打近-'+off+'M '+nearDist+'M → '+fmtMil(nearDist,tilt));
+    }
+  }
+  note.innerHTML=lines.length>0?lines.join('<br>'):dist+'M → '+fmtMil(dist,tilt);
+
+  skipUpdate=true;document.getElementById('dist').value=dist;skipUpdate=false;
+  if(!isDefault){addHistEntry(dist,lowOk?lowFinal:null,highOk?highFinal:null)}
+}
+
+function setMilInputs(low,high){
+  var valEl=document.getElementById('val');
+  var lowStr=low===''?'':String(low);
+  var highStr=high===''?'':String(high);
+  valEl.innerHTML=
+    '<input type="number" id="milLow" placeholder="低弹道" value="'+lowStr+'">'+
+    '<span class="u">MIL</span>'+
+    '<span class="tag">低弹道</span>'+
+    '<span class="sep">/</span>'+
+    '<input type="number" id="milHigh" placeholder="高弹道" value="'+highStr+'">'+
+    '<span class="u">MIL</span>'+
+    '<span class="tag">高弹道</span>';
+  setupMilListeners();
+}
+
+function setupMilListeners(){
+  var milLow=document.getElementById('milLow');
+  var milHigh=document.getElementById('milHigh');
+  selectOnFocus(milLow);
+  selectOnFocus(milHigh);
+  milLow.addEventListener('input',function(){isDefault=false;lastEdited='low';update()});
+  milHigh.addEventListener('input',function(){isDefault=false;lastEdited='high';update()});
+}
+
+function setD(v){isDefault=false;lastEdited='dist';document.getElementById('dist').value=v;update()}
+
+(function(){
+  var g=document.getElementById('qg');
+  var ds=[100,200,250,300,350,400,450,500,550,600];
+  for(var i=0;i<ds.length;i++){
+    var b=document.createElement('button');
+    b.className='qb';b.innerHTML=ds[i];b.setAttribute('data-d',ds[i]);g.appendChild(b);
+  }
+  g.addEventListener('click',function(e){
+    var tt=e.target;
+    while(tt&&tt!==g){
+      if(tt.hasAttribute&&tt.hasAttribute('data-d')){
+        isDefault=false;lastEdited='dist';
+        document.getElementById('dist').value=tt.getAttribute('data-d');
+        update();return;
+      }
+      tt=tt.parentNode;
+    }
+  });
+})();
+
+selectOnFocus(document.getElementById('dist'));
+selectOnFocus(document.getElementById('tilt'));
+setupMilListeners();
+
+renderHist();
+update();
+
+document.getElementById('dist').addEventListener('input',function(){isDefault=false;lastEdited='dist';update()});
+document.getElementById('tilt').addEventListener('input',function(){isDefault=false;lastEdited='tilt';update()});
+document.getElementById('offsetVal').addEventListener('input',function(){update()});
+</script>
+<script src="welcome.js"></script>
+
+</body>
+</html>
