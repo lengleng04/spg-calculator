@@ -203,13 +203,14 @@ var highData=[
 ];
 
 var histList=[];
-var tiltSign=0;
+var tiltSign=1;
 var isDefault=true;
 var darkMode=false;
 var shownCount=6;
 var skipUpdate=false;
 var lastEdited=null;
 
+// 【修复】按距离排序，自变量是距离
 function interpMil(table,dist){
   var s=table.slice().sort(function(a,b){return a.d-b.d});
   for(var i=0;i<s.length-1;i++){
@@ -221,6 +222,7 @@ function interpMil(table,dist){
   return null;
 }
 
+// 按密位排序，自变量是密位
 function interpDist(table,mil){
   var s=table.slice().sort(function(a,b){return a.m-b.m});
   for(var i=0;i<s.length-1;i++){
@@ -250,20 +252,15 @@ function selectOnFocus(el){
 function setSign(s){
   var btnP=document.getElementById('btnPlus');
   var btnM=document.getElementById('btnMinus');
-  if(s==='+'){
-    if(tiltSign===1){tiltSign=0;btnP.classList.remove('on')}
-    else{tiltSign=1;btnP.classList.add('on');btnM.classList.remove('on')}
-  }else{
-    if(tiltSign===-1){tiltSign=0;btnM.classList.remove('on')}
-    else{tiltSign=-1;btnM.classList.add('on');btnP.classList.remove('on')}
-  }
+  if(s==='+'){tiltSign=1;btnP.classList.add('on');btnM.classList.remove('on')}
+  else{tiltSign=-1;btnM.classList.add('on');btnP.classList.remove('on')}
   update();
 }
 
 function getTilt(){
   var raw=parseFloat(document.getElementById('tilt').value);
   if(isNaN(raw))return 0;
-  return tiltSign===0?raw:Math.abs(raw)*tiltSign;
+  return Math.abs(raw)*tiltSign;
 }
 
 function getOffset(){
@@ -288,7 +285,7 @@ function renderHist(){
   var html='<div class="hist-grid">';
   for(var i=0;i<show.length;i++){
     var h=show[i];
-    var label=h.low!==null?h.low:h.high;
+    var label=h.low!==null?h.low:(h.high!==null?h.high:'--');
     html+='<button class="hb" onclick="setD('+h.d+')">'+h.d+'<span class="mil">'+label+'MIL</span></button>';
   }
   if(remaining>0){html+='<button class="more-btn" onclick="showMore()">展开更多 (+'+remaining+')</button>'}
@@ -345,8 +342,8 @@ function update(){
 function fmtMil(d,tilt){
   var lowMil=interpMil(lowData,d);
   var highMil=interpMil(highData,d);
-  var lowFinal=lowMil!==null?lowMil+tilt:null;
-  var highFinal=highMil!==null?highMil+tilt:null;
+  var lowFinal=lowMil!==null?lowMil-tilt:null;
+  var highFinal=highMil!==null?highMil-tilt:null;
   var lowOk=lowFinal!==null&&lowFinal>=-89&&lowFinal<=533;
   var highOk=highFinal!==null&&highFinal>=-89&&highFinal<=533;
   var parts=[];
@@ -367,8 +364,8 @@ function calcMilFromDist(d,tilt){
     setMilInputs('','');
     note.textContent='无法计算';return;
   }
-  var lowFinal=lowMil!==null?lowMil+tilt:null;
-  var highFinal=highMil!==null?highMil+tilt:null;
+  var lowFinal=lowMil!==null?lowMil-tilt:null;
+  var highFinal=highMil!==null?highMil-tilt:null;
   var lowOk=lowFinal!==null&&lowFinal>=-89&&lowFinal<=533;
   var highOk=highFinal!==null&&highFinal>=-89&&highFinal<=533;
 
@@ -393,19 +390,21 @@ function calcMilFromDist(d,tilt){
 
 function calcDistFromMil(userMil,tilt,which){
   var note=document.getElementById('note');
-  var tableMil=userMil-tilt;
+  var tableMil=userMil+tilt;
   var table=which==='low'?lowData:highData;
   var dist=interpDist(table,tableMil);
   if(dist===null){
+    setMilInputs('','');
     note.textContent='无法找到对应距离';return;
   }
   if(dist<70||dist>600){
+    setMilInputs('','');
     note.textContent='距离超出范围 70~600M';return;
   }
   var lowMil=interpMil(lowData,dist);
   var highMil=interpMil(highData,dist);
-  var lowFinal=lowMil!==null?lowMil+tilt:null;
-  var highFinal=highMil!==null?highMil+tilt:null;
+  var lowFinal=lowMil!==null?lowMil-tilt:null;
+  var highFinal=highMil!==null?highMil-tilt:null;
   var lowOk=lowFinal!==null&&lowFinal>=-89&&lowFinal<=533;
   var highOk=highFinal!==null&&highFinal>=-89&&highFinal<=533;
 
@@ -479,14 +478,18 @@ selectOnFocus(document.getElementById('dist'));
 selectOnFocus(document.getElementById('tilt'));
 setupMilListeners();
 
+document.getElementById('btnPlus').classList.add('on');
+document.getElementById('tilt').addEventListener('input', function(){
+  this.value = this.value.replace(/[^0-9.]/g, '');
+  update();
+});
+
 renderHist();
 update();
 
 document.getElementById('dist').addEventListener('input',function(){isDefault=false;lastEdited='dist';update()});
-document.getElementById('tilt').addEventListener('input',function(){isDefault=false;lastEdited='tilt';update()});
 document.getElementById('offsetVal').addEventListener('input',function(){update()});
 </script>
-<script src="welcome.js"></script>
 
 </body>
 </html>
